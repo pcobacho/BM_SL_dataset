@@ -8,10 +8,10 @@ rng(211);   % Set RNG state for repeatability
 
 %% SIMULATION PARAMETERS
 prm.NCellID = 1;                    % Cell ID
-prm.FreqRange = 'FR1';              % Frequency range: 'FR1' or 'FR2'
-prm.CenterFreq = 3.2e9;              % Hz
-prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
-prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
+prm.FreqRange = 'FR2';              % Frequency range: 'FR1' or 'FR2'
+prm.CenterFreq = 30e9;              % Hz
+prm.SSBlockPattern = 'Case D';      % Case A/B/C/D/E
+prm.SSBTransmitted = [ones(1,64) zeros(1,0)];   % 4/8 or 64 in length
 
 prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
 prm.TxAZlim = [-180 -60];             % Transmit azimuthal sweep limits
@@ -21,7 +21,7 @@ prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
 prm.RxAZlim = [-180 180];           % Receive azimuthal sweep limits
 prm.RxELlim = [0 90];               % Receive elevation sweep limits
 
-prm.ElevationSweep = false;         % Enable/disable elevation sweep
+prm.ElevationSweep = true;         % Enable/disable elevation sweep
 prm.SNRdB = 30;                     % SNR, dB
 prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
 
@@ -56,8 +56,8 @@ title('Spectrogram of SS burst waveform')
 c = physconst('LightSpeed');   % Propagation speed
 lambda = c/prm.CenterFreq;     % Wavelength
 
-prm.posTx = [0;0;0];           % Transmit array position, [x;y;z], meters
-prm.posRx = [-30;-30;0];        % Receive array position, [x;y;z], meters
+prm.posTx = [0;0;25];           % Transmit array position, [x;y;z], meters
+prm.posRx = [-30;-30;1.5];        % Receive array position, [x;y;z], meters
 
 toRxRange = rangeangle(prm.posTx,prm.posRx);
 spLoss = fspl(toRxRange,lambda);    % Free space path loss

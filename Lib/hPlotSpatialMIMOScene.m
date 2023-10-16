@@ -45,7 +45,9 @@ function hPlotSpatialMIMOScene(sceneParams,wT,wR)
     rxArray    = sceneParams.RxArray;
     txArrayPos = sceneParams.TxArrayPos;
     rxArrayPos = sceneParams.RxArrayPos;
-    scatPos    = sceneParams.ScatterersPos;
+    if isfield(sceneParams,'ScatterersPos')
+        scatPos    = sceneParams.ScatterersPos;
+    end
     lambda     = sceneParams.Lambda;
     fc = physconst('LightSpeed')/lambda;
     txRxDist = norm(txArrayPos-rxArrayPos);
@@ -106,16 +108,18 @@ function hPlotSpatialMIMOScene(sceneParams,wT,wR)
     rxPanelCorners = rxarraypos_plot(:,[1 rxArraySize(1) prod(rxArraySize) prod(rxArraySize)-rxArraySize(1)+1]);
     rxPanel = patch(rxPanelCorners(1,:),rxPanelCorners(2,:),...
         rxPanelCorners(3,:),[0.3571 0.3571 0.3571],'LineStyle',':','FaceAlpha',0.5);
-
-    % Plot the scatterers and the paths connecting txArrayPos, scatPos and
-    % rxArrayPos
-    h3 = plot3(scatPos(1,:),scatPos(2,:),scatPos(3,:),'ro');
-    numScatterers = size(scatPos,2);
-    for m = 1:numScatterers
-        h4(m) = plot3([txArrayPos(1) scatPos(1,m) rxArrayPos(1) ...
-            scatPos(1,m)],[txArrayPos(2) scatPos(2,m) rxArrayPos(2) ...
-            scatPos(2,m)],[txArrayPos(3) scatPos(3,m) rxArrayPos(3) ...
-            scatPos(3,m)],'k'); %#ok<*AGROW>
+    
+    if isfield(sceneParams,'ScatterersPos')
+        % Plot the scatterers and the paths connecting txArrayPos, scatPos and
+        % rxArrayPos
+        h3 = plot3(scatPos(1,:),scatPos(2,:),scatPos(3,:),'ro');
+        numScatterers = size(scatPos,2);
+        for m = 1:numScatterers
+            h4(m) = plot3([txArrayPos(1) scatPos(1,m) rxArrayPos(1) ...
+                scatPos(1,m)],[txArrayPos(2) scatPos(2,m) rxArrayPos(2) ...
+                scatPos(2,m)],[txArrayPos(3) scatPos(3,m) rxArrayPos(3) ...
+                scatPos(3,m)],'k'); %#ok<*AGROW>
+        end
     end
 
     % Plot the transmit beam patterns
@@ -171,11 +175,18 @@ function hPlotSpatialMIMOScene(sceneParams,wT,wR)
     xlabel('X axis (m)')
     ylabel('Y axis (m)')
     zlabel('Z axis (m)')
-    legend([h1 txPanel h2 rxPanel h3 h4(1) h5 h6], ...
-        [{'Transmit antenna elements','Transmit antenna panel',...
-        'Receive antenna elements','Receive antenna panel','Scatterer(s)', ...
-        'Scatterer path(s)'} txBeamLegend rxBeamLegend],'Location', ...
-        'bestoutside');
+    if isfield(sceneParams,'ScatterersPos')
+        legend([h1 txPanel h2 rxPanel h3 h4(1) h5 h6], ...
+            [{'Transmit antenna elements','Transmit antenna panel',...
+            'Receive antenna elements','Receive antenna panel','Scatterer(s)', ...
+            'Scatterer path(s)'} txBeamLegend rxBeamLegend],'Location', ...
+            'bestoutside');
+    else
+        legend([h1 txPanel h2 rxPanel h5 h6], ...
+            [{'Transmit antenna elements','Transmit antenna panel',...
+            'Receive antenna elements','Receive antenna panel'} ...
+            txBeamLegend rxBeamLegend],'Location', 'bestoutside');
+    end
     hold off;
     axis equal;
     grid on;
