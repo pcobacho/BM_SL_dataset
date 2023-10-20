@@ -9,7 +9,7 @@
 % the scenario with all its elements.
 % *************************************************************************
 
-function show_scenario(gNBpos,interSiteDist,cellCenters,fillCell,userPos)
+function show_scenario(gNBpos,interSiteDist,cellCenters,fillCell,userPos,scatPos)
 
 r = interSiteDist/3;
 num_gNB = length(gNBpos);
@@ -40,9 +40,11 @@ for i=1:numCells
 end
 
 % Plot users
-if nargin==5
-    scatter(userPos(1,:),userPos(2,:),'r.')
-end
+scatter(userPos(1,:),userPos(2,:),'r.');
+
+% Plot scatters
+c = [211, 222, 220]/255;
+plot(scatPos(1,:),scatPos(2,:),'ko','MarkerSize', 4,'MarkerFaceColor',c);
 
 axis equal;
 title('Hexagonal Cells Scenario');

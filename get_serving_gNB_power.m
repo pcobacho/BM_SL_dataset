@@ -1,20 +1,15 @@
-% NR SSB Beam Sweeping
-clear; clc; %close all;
-rng(211);   % Set RNG state for repeatability
-
-% Add search path with the project files
-% *************************************************************************
-[~, oldPath] = addPaths();
+function rsrp = get_serving_gNB_power(cellCenters,cellID,userPos)
 
 %% SIMULATION PARAMETERS
-prm.NCellID = 15;                    % Cell ID
+prm.NCellID = 1;               % Cell ID
 prm.FreqRange = 'FR1';              % Frequency range: 'FR1' or 'FR2'
 prm.CenterFreq = 3.2e9;              % Hz
 prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
 prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
 
 prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
-prm.TxAZlim = [-180 -60];             % Transmit azimuthal sweep limits
+TxAZlims = [[60 -60]; [60 180]; [-180 -60]];
+prm.TxAZlim = TxAZlims(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
 prm.TxELlim = [-90 0];              % Transmit elevation sweep limits
 
 prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
