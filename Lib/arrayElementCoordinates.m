@@ -15,8 +15,8 @@ z = ((1:numRows) - (numRows + 1) / 2) * distancia_y;  % Coordenadas en el eje y
 C = [zeros(1,length(Y(:)));Y(:)'; Z(:)'];
 
 % Graficar los puntos
-figure();
-plot(C(2, :), C(3, :), 'o');
-xlabel('Coordenada Y'); ylabel('Coordenada Z');
-ttl = sprintf(['Panel de ' num2str(numRows) 'x' num2str(numCols) ' puntos equidistantes centrado en (0,0)']);
-title(ttl); axis square; grid on;
+% figure();
+% plot(C(2, :), C(3, :), 'o');
+% xlabel('Coordenada Y'); ylabel('Coordenada Z');
+% ttl = sprintf(['Panel de ' num2str(numRows) 'x' num2str(numCols) ' puntos equidistantes centrado en (0,0)']);
+% title(ttl); axis square; grid on;
