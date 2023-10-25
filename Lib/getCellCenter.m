@@ -21,4 +21,5 @@ cell_angles = [0 120 240];
 for i=1:num_gNB
     cellCenters(1,:,i) = gNBpos(1,i) + r * cosd(cell_angles);
     cellCenters(2,:,i) = gNBpos(2,i) + r * sind(cell_angles);
+    cellCenters(3,:,i) = 0;
 end

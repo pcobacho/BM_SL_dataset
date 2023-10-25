@@ -1,14 +1,14 @@
-function [rsrp,optRSRP,txBeamID,rxBeamID] = get_serving_gNB_power(gNBpos,cellID,userPos,scatPos)
+function rsrp = get_interfering_gNB_rsrp(gNBpos,cellID,userPos,scatPos,beamID)
 
 %% SIMULATION PARAMETERS
 prm.posTx = gNBpos;           % Transmit array position, [x;y;z], meters
 prm.posRx = userPos;        % Receive array position, [x;y;z], meters
 
 prm.NCellID = 1;               % Cell ID
-prm.FreqRange = 'FR2';              % Frequency range: 'FR1' or 'FR2'
-prm.CenterFreq = 32e9;              % Hz
-prm.SSBlockPattern = 'Case D';      % Case A/B/C/D/E
-prm.SSBTransmitted = [ones(1,64) zeros(1,0)];   % 4/8 or 64 in length
+prm.FreqRange = 'FR1';              % Frequency range: 'FR1' or 'FR2'
+prm.CenterFreq = 3.2e9;              % Hz
+prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
+prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
 
 prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
 TxAZlims = [[60 -60]; [60 180]; [-180 -60]];
@@ -22,7 +22,7 @@ prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
 prm.RxAZlim = [0 180];           % Receive azimuthal sweep limits
 prm.RxELlim = [0 90];               % Receive elevation sweep limits
 
-prm.ElevationSweep = true;         % Enable/disable elevation sweep
+prm.ElevationSweep = false;         % Enable/disable elevation sweep
 prm.SNRdB = 30;                     % SNR, dB
 prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
 
@@ -204,7 +204,7 @@ refGrid(burstOccupiedSubcarriers, ...
     burstOccupiedSymbols(1,:)) = pssGrid;
 
 % Loop over all receive beams
-rsrp = zeros(numRxBeams,numTxBeams);
+rsrp = zeros(numRxBeams,1);
 for rIdx = 1:numRxBeams
 
     % Fading channel, with path loss
@@ -239,28 +239,35 @@ for rIdx = 1:numRxBeams
     % OFDM Demodulate
     rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
 
-    % Loop over all SSBs in rxGrid (transmit end)
-    for tIdx = 1:numTxBeams
-        % Get each SSB grid
-        rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
-            burstOccupiedSymbols(tIdx,:),:);
+    % % Loop over all SSBs in rxGrid (transmit end)
+    % for tIdx = 1:numTxBeams
+    %     % Get each SSB grid
+    %     rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
+    %         burstOccupiedSymbols(tIdx,:),:);
+    % 
+    %     if strcmpi(prm.RSRPMode,'SSSwDMRS')
+    %         meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(tIdx-1,8));
+    %     else
+    %         meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
+    %     end
+    %     rsrp(rIdx,tIdx) = max(meas.RSRPPerAntenna);
+    % end
+    % Get each SSB grid
+    rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
+        burstOccupiedSymbols(beamID,:),:);
 
-        if strcmpi(prm.RSRPMode,'SSSwDMRS')
-            meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(tIdx-1,8));
-        else
-            meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
-        end
-        rsrp(rIdx,tIdx) = max(meas.RSRPPerAntenna);
+    if strcmpi(prm.RSRPMode,'SSSwDMRS')
+        meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(beamID-1,8));
+    else
+        meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
     end
+    rsrp(rIdx) = max(meas.RSRPPerAntenna);
+
 end
 
+rsrp = max(rsrp);
 
-%% BEAM DETERMINATION
-[~,i] = max(rsrp,[],'all','linear');    % First occurrence is output
-% i is column-down first (for receive), then across columns (for transmit)
-[rxBeamID,txBeamID] = ind2sub([numRxBeams numTxBeams],i(1));
-optRSRP = rsrp(rxBeamID,txBeamID);
-
+%% GRAPHS
 % Display the selected beam pair
 % disp(['Selected Beam pair with RSRP: ' num2str(optRSRP), ...
 %     ' dBm', 13 '  Transmit #' num2str(txBeamID) ...
