@@ -82,5 +82,8 @@ function prm = validateParams(prm)
     prm.SCS = scs;
     prm.ChannelBandwidth = cbw;
     prm.SubcarrierSpacingCommon = scsCommon;
+    
+    prm.numTxBeams = sum(prm.SSBTransmitted); % Num of beams at transmit end
+    prm.numRxBeams = 2; % Num of beams at transmit end
 
 end

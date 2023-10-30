@@ -1,4 +1,4 @@
-function rsrp = get_interfering_gNB_rsrp(gNBpos,cellID,userPos,scatPos,beamID)
+function rxPower = interf_rxPowerPerUser(gNBpos,cellID,userPos,scatPos,beamID)
 
 %% SIMULATION PARAMETERS
 prm.posTx = gNBpos;           % Transmit array position, [x;y;z], meters
@@ -214,9 +214,9 @@ for rIdx = 1:numRxBeams
     % Receive gain, to compensate for the path loss
     fadWaveG = fadWave*rxGain;
     
-    % Add WGN
-    noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
-    rxWaveform = fadWaveG + noise;
+    % no added AWGN
+    % noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
+    rxWaveform = fadWaveG;% + noise;
 
     % Generate weights for steered direction
     wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rIdx));
@@ -265,7 +265,7 @@ for rIdx = 1:numRxBeams
 
 end
 
-rsrp = max(rsrp);
+rxPower = max(rsrp);
 
 %% GRAPHS
 % Display the selected beam pair

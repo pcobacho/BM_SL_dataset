@@ -13,77 +13,58 @@
 
 clear; clc; close all;
 rng(211);   % Set RNG state for repeatability
-
+tic;
 % Add search path with the project files
-% *************************************************************************
 [~, oldPath] = addPaths();
 
-% Scenario parameters
-scen_center = [0,0];  % center of scenario
-num_users = 300;      % number of UEs in reference cell
-hUE = 0;              % UEs height
-num_gNB = 7;          % number of base stations (gNBs)
-h_gNB = 25;            % gNB height
-num_cells = num_gNB*3; % number of cells (sectors)
-interSiteDist = 200;  % inter site distance
-refCellID = 1;        % reference cell ID (cell under study)
-numScat = 0;         % number of scatters in scenario
+% Default parameters
+prm = defaultparams();
 
-% Get base stations (gNB) coordinates
-gNBpos = get_gNB_positions(scen_center,interSiteDist,h_gNB);
+% Customize parameters
+prm.num_users = 1;
+prm.fillCell = false;
+prm.ElevationSweep = false;
 
-% Get the cencell centers of all cells in scenario
-cellCenters = getCellCenter(gNBpos,interSiteDist);
+prm.numScat = 0;
+prm.interSiteDist = 200;
 
-% Get user positions in reference cell
-[userPos,~] = get_hex_users_positions(num_users,...
-    cellCenters(:,mod(refCellID-1,3)+1,ceil(refCellID/3)), interSiteDist,hUE);
+prm.hUE = 0;              % UEs height
+prm.h_gNB = 0;
 
-% Get scatters position
-scatPos = get_scatters_positions(numScat,scen_center,interSiteDist);
+% prm.FreqRange = 'FR2'; % ¿No funciona?
+% prm.CenterFreq = 32e9;
+% prm.SSBlockPattern = 'Case D';
+% prm.SSBTransmitted = [ones(1,64) zeros(1,0)];
 
-% Plot scenario
-fillCell = 0;
-show_scenario(gNBpos,interSiteDist,cellCenters,fillCell,userPos,scatPos)
+% Parameters validation
+prm = validateParams(prm);
+
+% Scenario initialization
+[gNBpos,cellCenters,userPos,scatPos] = iniScenario(prm);
 
 % Obtains the optimal beam pair RSRP each user of the reference cell
-txBeamID = zeros(1,num_users);
-rxBeamID = zeros(1,num_users);
-optRSRP = zeros(1,num_users);
-fprintf('<strong>Obtaining optimal beam pair RSRP of each user:</strong>\n');
-for u=1:num_users    
-    disp(['UserID: ' num2str(u)])
-    
-    current_gNBpos = gNBpos(:,ceil(refCellID/3));
-    [~,optRSRP(1,u),txBeamID(1,u),rxBeamID(1,u)] = get_serving_gNB_power(current_gNBpos, ...
-        refCellID,userPos(:,u),scatPos);
-end
+rxPowerdBm = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
+rxPowerdB = rxPowerdBm - 30;
 
-IDs = sort(unique(txBeamID));
-colors = lines(length(IDs)+1);
-cIdx=1; % color index
-figure; hold on, grid on, axis equal
-for i=IDs
-    uIdx = find(txBeamID==i); %user Index
-    plot(userPos(1,uIdx),userPos(2,uIdx),'Color',colors(cIdx,:),'Marker','o','LineStyle', 'none')
-    cIdx = cIdx+1;
-end
-% 
-% % Calculates interfering RSRP
-% num_beams = 8;
-% beamID = randi(num_beams,1,num_cells);
-% rsrp = zeros(num_users,num_cells);
-% fprintf('<strong>Obtaining interfering RSRP of each user:</strong>\n');
-% for u=1:num_users
-%     disp(['UserID: ' num2str(u)])
-%     for c=1:num_cells
-%         current_gNBpos = gNBpos(:,ceil(c/3));
-%         rsrp(u,c) = get_interfering_gNB_rsrp(current_gNBpos,c,userPos(:,u),...
-%             scatPos,beamID(c));
-%     end
-% end
+% Calculates interfering RSRP
+intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos);
+% intPowerdBm = intPowerdBm(:,2:end);
+intPowerdB = intPowerdBm-30;
+intPower = 10.^(intPowerdB./20);
+totalIntPower = sum(intPower,2);
+totalIntPowerdB = 20*log10(totalIntPower);
 
+% Calculate SINR per user
+BWinHz = 52*12*30e3;
+F=3; % noise figure
+NdB = -173.8+10*log10(BWinHz)-30+F;
+
+rxPower =  10.^(rxPowerdB./20);
+N = 10^(NdB/20);
+
+sinrdB = 10*log10(rxPower./(totalIntPower+N));
 
 % Restore search paths
 % *************************************************************************
 path(oldPath);
+toc;

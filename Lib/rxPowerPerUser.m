@@ -1,33 +1,9 @@
-function [rsrp,optRSRP,txBeamID,rxBeamID] = get_serving_gNB_power(gNBpos,cellID,userPos,scatPos)
+function [rsrp,optRSRP,txBeamID,rxBeamID] = rxPowerPerUser(prm,gNBpos,cellID,userPos,scatPos)
 
 %% SIMULATION PARAMETERS
-prm.posTx = gNBpos;           % Transmit array position, [x;y;z], meters
-prm.posRx = userPos;        % Receive array position, [x;y;z], meters
+TxAZlim = prm.TxAZranges(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
 
-prm.NCellID = 1;               % Cell ID
-prm.FreqRange = 'FR2';              % Frequency range: 'FR1' or 'FR2'
-prm.CenterFreq = 32e9;              % Hz
-prm.SSBlockPattern = 'Case D';      % Case A/B/C/D/E
-prm.SSBTransmitted = [ones(1,64) zeros(1,0)];   % 4/8 or 64 in length
-
-prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
-TxAZlims = [[60 -60]; [60 180]; [-180 -60]];
-prm.TxAZlim = TxAZlims(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
-prm.TxELlim = [-90 -10];              % Transmit elevation sweep limits
-
-cellAngles = [0, 120, -120];
-theta = cellAngles(mod(cellID-1,3)+1);
-
-prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
-prm.RxAZlim = [0 180];           % Receive azimuthal sweep limits
-prm.RxELlim = [0 90];               % Receive elevation sweep limits
-
-prm.ElevationSweep = true;         % Enable/disable elevation sweep
-prm.SNRdB = 30;                     % SNR, dB
-prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
-
-
-prm = validateParams(prm);
+theta = prm.cellAngles(mod(cellID-1,3)+1); % Current cell normal angle
 
 %% SYNCHRONIZATION SIGNAL BURST CONFIGURATION
 txBurst = nrWavegenSSBurstConfig;
@@ -57,7 +33,7 @@ ofdmInfo = nrOFDMInfo(cfgDL.SCSCarriers{1}.NSizeGrid,prm.SCS);
 c = physconst('LightSpeed');   % Propagation speed
 lambda = c/prm.CenterFreq;     % Wavelength
 
-toRxRange = rangeangle(prm.posTx,prm.posRx);
+toRxRange = rangeangle(gNBpos,userPos);
 spLoss = fspl(toRxRange,lambda);    % Free space path loss
 
 % Transmit array (Conformal array for 360-degree sweep)  
@@ -109,9 +85,9 @@ channel.SimulateDirectPath = true;
 channel.ChannelResponseOutputPort = true;
 channel.Polarization = 'None';
 channel.TransmitArray = arrayTx;
-channel.TransmitArrayPosition = prm.posTx;
+channel.TransmitArrayPosition = gNBpos;
 channel.ReceiveArray = arrayRx;
-channel.ReceiveArrayPosition = prm.posRx;
+channel.ReceiveArrayPosition = userPos;
 channel.ScattererSpecificationSource = 'Property';
 if isfield(prm,'ScatPos')
     channel.ScattererPosition = prm.ScatPos;
@@ -125,14 +101,16 @@ maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
 
 
 %% TRANSMIT-END BEAM SWEEPING
-% Number of beams at both transmit and receive ends
-numTxBeams = sum(txBurst.TransmittedBlocks);
 
 % Transmit beam angles in azimuth and elevation, equi-spaced
 azBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Azimuth');
 elBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Elevation');
-txBeamAng = hGetBeamSweepAngles(numTxBeams,prm.TxAZlim,prm.TxELlim, ...
+txBeamAng = hGetBeamSweepAngles(prm.numTxBeams,TxAZlim,prm.TxELlim, ...
     azBW,elBW,prm.ElevationSweep);
+
+% AzAngles = linspace(TxAZlim(1),TxAZlim(2),prm.numTxBeams/2);
+% ElAngles = [-20.56*ones(1,4) -14.04*ones(1,4)];
+% txBeamAng = [repmat(AzAngles,1,2);ElAngles];
 
 % For evaluating transmit-side steering weights
 SteerVecTx = phased.SteeringVector('SensorArray',arrayTx, ...
@@ -148,8 +126,8 @@ burstOccupiedSymbols = burstStartSymbols.' + (1:4);
 gridSymLengths = repmat(ofdmInfo.SymbolLengths,1,cfgDL.NumSubframes);
 %   repeat burst over numTx to prepare for steering
 strTxWaveform = repmat(burstWaveform,1,prm.NumTx)./sqrt(prm.NumTx);
-wT = zeros(prm.NumTx,numTxBeams);
-for ssb = 1:numTxBeams
+wT = zeros(prm.NumTx,prm.numTxBeams);
+for ssb = 1:prm.numTxBeams
 
     % Extract SSB waveform from burst
     blockSymbols = burstOccupiedSymbols(ssb,:);
@@ -167,12 +145,14 @@ end
 
 
 %% RECEIVE-END BEAM SWEEPING AND MEASUREMENT
-numRxBeams = 2;
+
 % Receive beam angles in azimuth and elevation, equi-spaced
 azBW = beamwidth(arrayRx,prm.CenterFreq,'Cut','Azimuth');
 elBW = beamwidth(arrayRx,prm.CenterFreq,'Cut','Elevation');
-rxBeamAng = hGetBeamSweepAngles(numRxBeams,prm.RxAZlim,prm.RxELlim, ...
+rxBeamAng = hGetBeamSweepAngles(prm.numRxBeams,prm.RxAZlim,prm.RxELlim, ...
     azBW,elBW,prm.ElevationSweep);
+
+% rxBeamAng = [0 180; 0 0];
 
 % For evaluating receive-side steering weights
 SteerVecRx = phased.SteeringVector('SensorArray',arrayRx, ...
@@ -204,8 +184,8 @@ refGrid(burstOccupiedSubcarriers, ...
     burstOccupiedSymbols(1,:)) = pssGrid;
 
 % Loop over all receive beams
-rsrp = zeros(numRxBeams,numTxBeams);
-for rIdx = 1:numRxBeams
+rsrp = zeros(prm.numRxBeams,prm.numTxBeams);
+for rIdx = 1:prm.numRxBeams
 
     % Fading channel, with path loss
     txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
@@ -214,9 +194,9 @@ for rIdx = 1:numRxBeams
     % Receive gain, to compensate for the path loss
     fadWaveG = fadWave*rxGain;
     
-    % Add WGN
-    noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
-    rxWaveform = fadWaveG + noise;
+    % no added AWGN
+    % noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
+    rxWaveform = fadWaveG;% + noise;
 
     % Generate weights for steered direction
     wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rIdx));
@@ -240,7 +220,7 @@ for rIdx = 1:numRxBeams
     rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
 
     % Loop over all SSBs in rxGrid (transmit end)
-    for tIdx = 1:numTxBeams
+    for tIdx = 1:prm.numTxBeams
         % Get each SSB grid
         rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
             burstOccupiedSymbols(tIdx,:),:);
@@ -258,7 +238,7 @@ end
 %% BEAM DETERMINATION
 [~,i] = max(rsrp,[],'all','linear');    % First occurrence is output
 % i is column-down first (for receive), then across columns (for transmit)
-[rxBeamID,txBeamID] = ind2sub([numRxBeams numTxBeams],i(1));
+[rxBeamID,txBeamID] = ind2sub([prm.numRxBeams prm.numTxBeams],i(1));
 optRSRP = rsrp(rxBeamID,txBeamID);
 
 % Display the selected beam pair
@@ -296,8 +276,8 @@ optRSRP = rsrp(rxBeamID,txBeamID);
 % prmScene = struct();
 % prmScene.TxArray = arrayTx;
 % prmScene.RxArray = arrayRx;
-% prmScene.TxArrayPos = prm.posTx;
-% prmScene.RxArrayPos = prm.posRx;
+% prmScene.TxArrayPos = gNBpos;
+% prmScene.RxArrayPos = userPos;
 % if isfield(prm,'ScatPos')
 %     prmScene.ScatterersPos = prm.ScatPos;
 % end
@@ -312,17 +292,7 @@ optRSRP = rsrp(rxBeamID,txBeamID);
 % 
 % % Plot the scattering MIMO scenario (including transmit and receive antenna
 % % arrays, scatterer positions and their paths, and all the transmit and 
-% % receive antenna array beam patterns) by using the helper function 
-% % hPlotSpatialMIMOScene. Beam patterns in this figure resemble the power
-% % patterns in linear scale.Plot the scattering MIMO scenario (including
-% % transmit and receive antenna arrays, scatterer positions and their paths,
-% % and all the transmit and receive antenna array beam patterns) by using 
-% % the helper function hPlotSpatialMIMOScene. Beam patterns in this figure
-% % resemble the power patterns in linear scale.Plot the scattering MIMO
-% % scenario (including transmit and receive antenna arrays, scatterer 
-% % positions and their paths, and all the transmit and receive antenna array
-% % beam patterns) by using the helper function hPlotSpatialMIMOScene. Beam 
-% % patterns in this figure resemble the power patterns in linear scale.
+% % receive antenna array beam patterns) 
 % hPlotSpatialMIMOScene(prmScene,wT,wR);
 % axis tight;
 % view([74 29]);
