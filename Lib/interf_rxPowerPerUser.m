@@ -1,31 +1,12 @@
-function rxPower = interf_rxPowerPerUser(gNBpos,cellID,userPos,scatPos,beamID)
+function rxPower = interf_rxPowerPerUser(prm,gNBpos,cellID,userPos,scatPos,beamID)
 
 %% SIMULATION PARAMETERS
 prm.posTx = gNBpos;           % Transmit array position, [x;y;z], meters
 prm.posRx = userPos;        % Receive array position, [x;y;z], meters
 
-prm.NCellID = 1;               % Cell ID
-prm.FreqRange = 'FR1';              % Frequency range: 'FR1' or 'FR2'
-prm.CenterFreq = 3.2e9;              % Hz
-prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
-prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
+prm.TxAZlim = prm.TxAZranges(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
 
-prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
-TxAZlims = [[60 -60]; [60 180]; [-180 -60]];
-prm.TxAZlim = TxAZlims(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
-prm.TxELlim = [-90 -10];              % Transmit elevation sweep limits
-
-cellAngles = [0, 120, -120];
-theta = cellAngles(mod(cellID-1,3)+1);
-
-prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
-prm.RxAZlim = [0 180];           % Receive azimuthal sweep limits
-prm.RxELlim = [0 90];               % Receive elevation sweep limits
-
-prm.ElevationSweep = false;         % Enable/disable elevation sweep
-prm.SNRdB = 30;                     % SNR, dB
-prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
-
+theta = prm.cellAngles(mod(cellID-1,3)+1);
 
 prm = validateParams(prm);
 

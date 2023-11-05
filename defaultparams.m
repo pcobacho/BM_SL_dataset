@@ -16,12 +16,12 @@ prm.fillCell = false;    % fills cells with color according to their gNB
 prm.NCellID = 1;               % Cell ID
 prm.FreqRange = 'FR1';              % Frequency range: 'FR1' or 'FR2'
 prm.CenterFreq = 3.2e9;              % Hz
-prm.SSBlockPattern = 'Case B';      % Case A/B/C/D/E
+prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
 prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
 
 prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
-prm.TxAZranges = [[60 -60]; [60 180]; [-180 -60]];
-prm.TxELlim = [-90 -10];              % Transmit elevation sweep limits
+prm.TxAZranges = [[-60 60]; [60 180]; [-180 -60]];
+prm.TxELlim = [-60 -15];              % Transmit elevation sweep limits
 
 prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
 prm.RxAZlim = [0 180];           % Receive azimuthal sweep limits
