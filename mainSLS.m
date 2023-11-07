@@ -21,10 +21,10 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 550;
+prm.num_users = 500;
 prm.fillCell = false;
 
-prm.numScat = 0;
+prm.numScat = 25;
 prm.interSiteDist = 200;
 
 prm.hUE = 1.5;              % UEs height
@@ -51,7 +51,7 @@ intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos);
 % intPowerdBm = intPowerdBm(:,2:end);
 intPowerdB = intPowerdBm-30;
 intPower = 10.^(intPowerdB./10);
-totalIntPower = sum(intPower(2:end),2);
+totalIntPower = sum(intPower(:,2:end),2);
 totalIntPowerdB = 10*log10(totalIntPower);
 
 % Calculate SINR per user
@@ -63,7 +63,15 @@ rxPower =  10.^(rxPowerdB./10);
 N = 10^(NdB/10);
 
 sinrdB = 10*log10(rxPower./(totalIntPower+N));
-% disp(['SINR = ' num2str(sinrdB) ' dB'])
+
+% SINR histogram (pdf)
+figure, histogram(sinrdB,'Normalization','pdf')
+xlabel('SINR (dB)'), title('SINR PDF')
+
+% SINR map
+if prm.num_users>1
+    showUserSINRmap(sinrdB,userPos,prm.num_users)
+end
 
 % Restore search paths
 % *************************************************************************

@@ -18,6 +18,7 @@ cIdx=1; % color index
 figure; hold on, grid on, axis equal
 for i=IDs
     uIdx = find(txBeamID==i); %user Index
-    plot(userPos(1,uIdx),userPos(2,uIdx),'Color',colors(cIdx,:),'Marker','o','LineStyle', 'none')
+    % plot(userPos(1,uIdx),userPos(2,uIdx),'Color',colors(cIdx,:),'Marker','o','LineStyle', 'none')
+    scatter(userPos(1,uIdx),userPos(2,uIdx),30,colors(cIdx,:),'filled')
     cIdx = cIdx+1;
 end

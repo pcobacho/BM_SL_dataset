@@ -1,6 +1,6 @@
 function intPower = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos)
 
-beamID = randi(prm.numTxBeams,prm.num_cells-1);
+beamID = randi([1,prm.numTxBeams],1,prm.num_cells);
 intPower = zeros(prm.num_users,prm.num_cells-1);
 fprintf('<strong>Obtaining interfering RSRP of each user:</strong>\n');
 for u=1:prm.num_users
