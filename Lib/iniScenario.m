@@ -15,5 +15,7 @@ cellCenters = getCellCenter(gNBpos,prm.interSiteDist);
 scatPos = get_scatters_positions(prm.numScat,prm.scen_center, ...
     prm.interSiteDist);
 
-% Plot scenario
-show_scenario(gNBpos,prm.interSiteDist,cellCenters,prm.fillCell,userPos,scatPos)
+if prm.showFigures
+    % Plot scenario
+    show_scenario(gNBpos,prm.interSiteDist,cellCenters,prm.fillCell,userPos,scatPos)
+end

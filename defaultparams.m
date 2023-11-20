@@ -32,3 +32,8 @@ prm.cellAngles = [0, 120, -120];
 prm.ElevationSweep = false;         % Enable/disable elevation sweep
 prm.SNRdB = 30;                     % SNR, dB
 prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
+
+% Simulation parameters
+prm.showFigures = true;
+prm.resultFolder = 'sim';
+prm.saveResults = true;

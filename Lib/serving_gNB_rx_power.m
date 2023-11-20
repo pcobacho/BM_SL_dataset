@@ -12,13 +12,15 @@ for u=1:prm.num_users
         prm.refCellID,userPos(:,u),scatPos);
 end
 
-IDs = sort(unique(txBeamID));
-colors = lines(length(IDs)+1);
-cIdx=1; % color index
-figure; hold on, grid on, axis equal
-for i=IDs
-    uIdx = find(txBeamID==i); %user Index
-    % plot(userPos(1,uIdx),userPos(2,uIdx),'Color',colors(cIdx,:),'Marker','o','LineStyle', 'none')
-    scatter(userPos(1,uIdx),userPos(2,uIdx),30,colors(cIdx,:),'filled')
-    cIdx = cIdx+1;
+if prm.showFigures
+    IDs = sort(unique(txBeamID));
+    colors = lines(length(IDs)+1);
+    cIdx=1; % color index
+    figure; hold on, grid on, axis equal
+    for i=IDs
+        uIdx = find(txBeamID==i); %user Index
+        % plot(userPos(1,uIdx),userPos(2,uIdx),'Color',colors(cIdx,:),'Marker','o','LineStyle', 'none')
+        scatter(userPos(1,uIdx),userPos(2,uIdx),30,colors(cIdx,:),'filled')
+        cIdx = cIdx+1;
+    end
 end

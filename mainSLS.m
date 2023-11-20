@@ -21,10 +21,10 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 500;
+prm.num_users = 1;
 prm.fillCell = false;
 
-prm.numScat = 25;
+prm.numScat = 0;
 prm.interSiteDist = 200;
 
 prm.hUE = 1.5;              % UEs height
@@ -64,13 +64,23 @@ N = 10^(NdB/10);
 
 sinrdB = 10*log10(rxPower./(totalIntPower+N));
 
-% SINR histogram (pdf)
-figure, histogram(sinrdB,'Normalization','pdf')
-xlabel('SINR (dB)'), title('SINR PDF')
+if prm.showFigures
+    % SINR histogram (pdf)
+    figure, histogram(sinrdB,'Normalization','pdf')
+    xlabel('SINR (dB)'), title('SINR PDF')
+    
+    % SINR map
+    if prm.num_users>1
+        showUserSINRmap(sinrdB,userPos,prm.num_users)
+    end
+end
 
-% SINR map
-if prm.num_users>1
-    showUserSINRmap(sinrdB,userPos,prm.num_users)
+if prm.saveResults    
+    % Save results
+    numTxBeams = length(prm.SSBTransmitted);
+    % filename = sprintf('%s/%dusers_%dbeams_%dscat.mat',prm.folderName,prm.num_users,numTxBeams,prm.numScat);
+    filename = sprintf('Results/%dusers_%dbeams_%dscat.mat',prm.num_users,numTxBeams,prm.numScat);
+    save(filename,'prm','sinrdB');
 end
 
 % Restore search paths
