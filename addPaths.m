@@ -15,5 +15,5 @@
 function [currentDir, oldPath] = addPaths()
 oldPath = path;
 currentDir = cd;
-path([currentDir '\Lib'], path);
+path([currentDir '/Lib'], path);
 cd(currentDir);

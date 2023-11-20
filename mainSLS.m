@@ -21,7 +21,7 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 1;
+prm.num_users = 10;
 prm.fillCell = false;
 
 prm.numScat = 0;

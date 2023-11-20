@@ -34,6 +34,6 @@ prm.SNRdB = 30;                     % SNR, dB
 prm.RSRPMode = 'SSSwDMRS';          % {'SSSwDMRS', 'SSSonly'}
 
 % Simulation parameters
-prm.showFigures = true;
+prm.showFigures = false;
 prm.resultFolder = 'sim';
 prm.saveResults = true;
