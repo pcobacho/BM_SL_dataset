@@ -12,8 +12,14 @@
 % *************************************************************************
 
 clear; clc; close all;
-rng(211);   % Set RNG state for repeatability
+seed=221;
+rng(seed);   % Set RNG state for repeatability
 tic;
+
+% Configure number of workers (parfor)
+% numWorkers=10;
+% parpool('local',numWorkers);
+
 % Add search path with the project files
 [~, oldPath] = addPaths();
 
@@ -21,10 +27,10 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 10;
+prm.num_users = 500;
 prm.fillCell = false;
 
-prm.numScat = 0;
+prm.numScat = 25;
 prm.interSiteDist = 200;
 
 prm.hUE = 1.5;              % UEs height
@@ -68,7 +74,7 @@ if prm.showFigures
     % SINR histogram (pdf)
     figure, histogram(sinrdB,'Normalization','pdf')
     xlabel('SINR (dB)'), title('SINR PDF')
-    
+
     % SINR map
     if prm.num_users>1
         showUserSINRmap(sinrdB,userPos,prm.num_users)
@@ -77,13 +83,15 @@ end
 
 if prm.saveResults    
     % Save results
-    numTxBeams = length(prm.SSBTransmitted);
-    % filename = sprintf('%s/%dusers_%dbeams_%dscat.mat',prm.folderName,prm.num_users,numTxBeams,prm.numScat);
-    filename = sprintf('Results/%dusers_%dbeams_%dscat.mat',prm.num_users,numTxBeams,prm.numScat);
+    filename = createFilename(prm,seed);
     save(filename,'prm','sinrdB');
 end
 
 % Restore search paths
 % *************************************************************************
 path(oldPath);
+
+% Close parallel group
+delete(gcp('nocreate'));
+
 toc;
