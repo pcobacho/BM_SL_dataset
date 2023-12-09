@@ -17,8 +17,8 @@ rng(seed);   % Set RNG state for repeatability
 tic;
 
 % Configure number of workers (parfor)
-% numWorkers=10;
-% parpool('local',numWorkers);
+numWorkers=10;
+parpool('local',numWorkers);
 
 % Add search path with the project files
 [~, oldPath] = addPaths();
@@ -27,20 +27,20 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 500;
+prm.num_users = 100;
 prm.fillCell = false;
 
-prm.numScat = 25;
+prm.numScat = 0;
 prm.interSiteDist = 200;
 
-prm.hUE = 1.5;              % UEs height
-prm.h_gNB = 25;
-prm.ElevationSweep = true;
+prm.hUE = 0;              % UEs height
+prm.h_gNB = 0;
+prm.ElevationSweep = false;
 
 prm.FreqRange = 'FR2';
 prm.CenterFreq = 32e9;
 prm.SSBlockPattern = 'Case D';
-prm.SSBTransmitted = [ones(1,64) zeros(1,0)];
+prm.SSBTransmitted = [ones(1,9) zeros(1,55)];
 
 % Parameters validation
 prm = validateParams(prm);
@@ -49,11 +49,11 @@ prm = validateParams(prm);
 [gNBpos,cellCenters,userPos,scatPos] = iniScenario(prm);
 
 % Obtains the optimal beam pair RSRP each user of the reference cell
-rxPowerdBm = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
+[rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
 rxPowerdB = rxPowerdBm - 30;
 
 % Calculates interfering RSRP
-intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos);
+intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
 % intPowerdBm = intPowerdBm(:,2:end);
 intPowerdB = intPowerdBm-30;
 intPower = 10.^(intPowerdB./10);
@@ -84,7 +84,7 @@ end
 if prm.saveResults    
     % Save results
     filename = createFilename(prm,seed);
-    save(filename,'prm','sinrdB');
+    save(filename,'prm','sinrdB','RSRP','txBeamID','rxBeamID');
 end
 
 % Restore search paths

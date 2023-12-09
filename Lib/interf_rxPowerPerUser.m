@@ -1,4 +1,5 @@
-function rxPower = interf_rxPowerPerUser(prm,gNBpos,cellID,userPos,scatPos,beamID)
+function rxPower = interf_rxPowerPerUser(prm,gNBpos,cellID,userPos,scatPos,...
+    txBeamID,rxBeamID)
 
 %% SIMULATION PARAMETERS
 prm.posTx = gNBpos;           % Transmit array position, [x;y;z], meters
@@ -184,69 +185,52 @@ burstOccupiedSubcarriers = carrier.NSizeGrid*6 + (-119:120).';
 refGrid(burstOccupiedSubcarriers, ...
     burstOccupiedSymbols(1,:)) = pssGrid;
 
-% Loop over all receive beams
-rsrp = zeros(numRxBeams,1);
-for rIdx = 1:numRxBeams
 
-    % Fading channel, with path loss
-    txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
-    fadWave = channel(txWave);
+% Calculate the power received by the selected beam pair (rxBeamID,txBeamID)
+% Fading channel, with path loss
+txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
+fadWave = channel(txWave);
 
-    % Receive gain, to compensate for the path loss
-    fadWaveG = fadWave*rxGain;
-    
-    % no added AWGN
-    % noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
-    rxWaveform = fadWaveG;% + noise;
+% Receive gain, to compensate for the path loss
+fadWaveG = fadWave*rxGain;
 
-    % Generate weights for steered direction
-    wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rIdx));
+% no added AWGN
+% noise = N0*complex(randn(size(fadWaveG)),randn(size(fadWaveG)));
+rxWaveform = fadWaveG;% + noise;
 
-    % Apply weights per receive element
-    if strcmp(prm.FreqRange, 'FR1')
-        strRxWaveform = rxWaveform.*(wR');
-    else  % for FR2, combine signal from antenna elements
-        strRxWaveform = rxWaveform*conj(wR);
-    end
-    
-    % Correct timing
-    offset = nrTimingEstimate(carrier, ...
-        strRxWaveform(1:ofdmInfo.SampleRate*1e-3,:),refGrid*wR(1)');
-    if offset > maxChDelay
-        offset = 0;
-    end
-    strRxWaveformS = strRxWaveform(1+offset:end,:);
+% Generate weights for steered direction
+wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rxBeamID));
 
-    % OFDM Demodulate
-    rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
-
-    % % Loop over all SSBs in rxGrid (transmit end)
-    % for tIdx = 1:numTxBeams
-    %     % Get each SSB grid
-    %     rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
-    %         burstOccupiedSymbols(tIdx,:),:);
-    % 
-    %     if strcmpi(prm.RSRPMode,'SSSwDMRS')
-    %         meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(tIdx-1,8));
-    %     else
-    %         meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
-    %     end
-    %     rsrp(rIdx,tIdx) = max(meas.RSRPPerAntenna);
-    % end
-    % Get each SSB grid
-    rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
-        burstOccupiedSymbols(beamID,:),:);
-
-    if strcmpi(prm.RSRPMode,'SSSwDMRS')
-        meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(beamID-1,8));
-    else
-        meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
-    end
-    rsrp(rIdx) = max(meas.RSRPPerAntenna);
-
+% Apply weights per receive element
+if strcmp(prm.FreqRange, 'FR1')
+    strRxWaveform = rxWaveform.*(wR');
+else  % for FR2, combine signal from antenna elements
+    strRxWaveform = rxWaveform*conj(wR);
 end
 
-rxPower = max(rsrp);
+% Correct timing
+offset = nrTimingEstimate(carrier, ...
+    strRxWaveform(1:ofdmInfo.SampleRate*1e-3,:),refGrid*wR(1)');
+if offset > maxChDelay
+    offset = 0;
+end
+strRxWaveformS = strRxWaveform(1+offset:end,:);
+
+% OFDM Demodulate
+rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
+
+% Get each SSB grid
+rxSSBGrid = rxGrid(burstOccupiedSubcarriers, ...
+    burstOccupiedSymbols(txBeamID,:),:);
+
+if strcmpi(prm.RSRPMode,'SSSwDMRS')
+    meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID,mod(txBeamID-1,8));
+else
+    meas = nrSSBMeasurements(rxSSBGrid,carrier.NCellID);
+end
+rxPower = max(meas.RSRPPerAntenna);
+
+
 
 %% GRAPHS
 % Display the selected beam pair

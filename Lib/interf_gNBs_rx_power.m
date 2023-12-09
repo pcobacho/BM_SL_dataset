@@ -1,4 +1,4 @@
-function intPower = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos)
+function intPower = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID)
 
 beamID = randi([1,prm.numTxBeams],1,prm.num_cells);
 intPower = zeros(prm.num_users,prm.num_cells-1);
@@ -10,7 +10,7 @@ parfor u=1:prm.num_users
     for c=cells
         current_gNBpos = gNBpos(:,ceil(c/3));
         intPower(u,c) = interf_rxPowerPerUser(prm,current_gNBpos,c,userPos(:,u),...
-            scatPos,beamID(c));
+            scatPos,beamID(c),rxBeamID(u));
     end
 end
 

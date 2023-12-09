@@ -1,7 +1,8 @@
-function rxPower = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos)
+function [rxPower,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos)
 
+RSRP = zeros(prm.numRxBeams,prm.numTxBeams,prm.num_users);
 txBeamID = zeros(1,prm.num_users);
-% rxBeamID = zeros(1,prm.num_users);
+rxBeamID = zeros(1,prm.num_users);
 rxPower = zeros(prm.num_users,1);
 fprintf('<strong>Obtaining optimal beam pair RSRP of each user:</strong>\n');
 
@@ -10,7 +11,7 @@ current_gNBpos = gNBpos(:,ceil(prm.refCellID/3));
 parfor u=1:prm.num_users
     disp(['UserID: ' num2str(u)])
         
-    [~,rxPower(u,1),txBeamID(1,u),~] = rxPowerPerUser(prm,current_gNBpos, ...
+    [RSRP(:,:,u),rxPower(u,1),txBeamID(1,u),rxBeamID(1,u)] = rxPowerPerUser(prm,current_gNBpos, ...
         prm.refCellID,userPos(:,u),scatPos);
 end
 
