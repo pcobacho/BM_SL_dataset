@@ -165,7 +165,8 @@ SNR = 10^(prm.SNRdB/20);                        % Convert to linear gain
 N0 = 1/(sqrt(2.0*prm.NumRx*double(ofdmInfo.Nfft))*SNR); % Noise Std. Dev.
 
 % Receive gain in linear terms, to compensate for the path loss
-rxGain = 10^(spLoss/20);   
+% rxGain = 10^(spLoss/20);   
+rxGain = 10^(prm.rxGain_dB/20);
 
 % Generate a reference grid for timing correction
 %   assumes an SSB in first slot

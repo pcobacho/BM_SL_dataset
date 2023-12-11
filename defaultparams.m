@@ -26,6 +26,7 @@ prm.TxELlim = [-60 -15];              % Transmit elevation sweep limits
 prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
 prm.RxAZlim = [0 180];           % Receive azimuthal sweep limits
 prm.RxELlim = [0 90];               % Receive elevation sweep limits
+prm.rxGain_dB = 98;                 % Rx antenna gain (in dB)
 
 prm.cellAngles = [0, 120, -120];
 
