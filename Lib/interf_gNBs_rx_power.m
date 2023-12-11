@@ -5,12 +5,12 @@ intPower = zeros(prm.num_users,prm.num_cells-1);
 cells = setdiff(1:prm.num_cells,prm.NCellID);
 
 fprintf('<strong>Obtaining interfering RSRP of each user:</strong>\n');
-parfor u=1:prm.num_users
-    disp(['UserID: ' num2str(u)])
-    for c=cells
-        current_gNBpos = gNBpos(:,ceil(c/3));
+for c=cells
+    current_gNBpos = gNBpos(:,ceil(c/3));
+    bID = beamID(c);
+    parfor u=1:prm.num_users
         intPower(u,c) = interf_rxPowerPerUser(prm,current_gNBpos,c,userPos(:,u),...
-            scatPos,beamID(c),rxBeamID(u));
+            scatPos,bID,rxBeamID(u));
     end
 end
 

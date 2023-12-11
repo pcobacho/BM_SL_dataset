@@ -11,8 +11,8 @@ current_gNBpos = gNBpos(:,ceil(prm.refCellID/3));
 parfor u=1:prm.num_users
     disp(['UserID: ' num2str(u)])
         
-    [RSRP(:,:,u),rxPower(u,1),txBeamID(1,u),rxBeamID(1,u)] = rxPowerPerUser(prm,current_gNBpos, ...
-        prm.refCellID,userPos(:,u),scatPos);
+    [RSRP(:,:,u),rxPower(u,1),txBeamID(1,u),rxBeamID(1,u)] = rxPowerPerUser(prm,...
+        current_gNBpos,userPos(:,u),scatPos);
 end
 
 if prm.showFigures

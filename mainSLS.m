@@ -5,7 +5,7 @@
 % TELMA, ETSIT, University of Malaga
 % *************************************************************************
 % DESCRIPTION:
-% This script simulates the P2 beam management procedure in a mresobile 
+% This script simulates the P2 beam management procedure in a mobile 
 % communications scenario with hexagonal cells. In addition, it calculates
 % the downlink SINR for the users contained in the cell under study 
 % (refCellID).
@@ -27,7 +27,7 @@ parpool('local',numWorkers);
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 100;
+prm.num_users = 2;
 prm.fillCell = false;
 
 prm.numScat = 0;
@@ -42,6 +42,9 @@ prm.CenterFreq = 32e9;
 prm.SSBlockPattern = 'Case D';
 prm.SSBTransmitted = [ones(1,9) zeros(1,55)];
 
+prm.showFigures = false;
+prm.saveResults = false;
+
 % Parameters validation
 prm = validateParams(prm);
 
@@ -49,11 +52,11 @@ prm = validateParams(prm);
 [gNBpos,cellCenters,userPos,scatPos] = iniScenario(prm);
 
 % Obtains the optimal beam pair RSRP each user of the reference cell
-[rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
+[rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,obj,gNBpos,userPos,scatPos);
 rxPowerdB = rxPowerdBm - 30;
 
 % Calculates interfering RSRP
-intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
+intPowerdBm = interf_gNBs_rx_power(prm,obj,gNBpos,userPos,scatPos,rxBeamID);
 % intPowerdBm = intPowerdBm(:,2:end);
 intPowerdB = intPowerdBm-30;
 intPower = 10.^(intPowerdB./10);

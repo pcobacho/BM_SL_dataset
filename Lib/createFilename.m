@@ -10,7 +10,7 @@
 
 function filename = createFilename(prm,seed)
 
-numTxBeams = length(prm.SSBTransmitted);
+numTxBeams = sum(prm.SSBTransmitted);
 path = [cd '/Results'];
 filename = sprintf('%dusers_%dbeams_%dscat_seed%d.mat',prm.num_users,numTxBeams,prm.numScat,seed);
 

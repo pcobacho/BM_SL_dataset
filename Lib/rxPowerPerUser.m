@@ -1,9 +1,9 @@
-function [rsrp,optRSRP,txBeamID,rxBeamID] = rxPowerPerUser(prm,gNBpos,cellID,userPos,scatPos)
+function [rsrp,optRSRP,txBeamID,rxBeamID] = rxPowerPerUser(prm,gNBpos,userPos,scatPos)
 
 %% SIMULATION PARAMETERS
-TxAZlim = prm.TxAZranges(mod(cellID-1,3)+1,:);  % Transmit azimuthal sweep limits
+TxAZlim = prm.TxAZranges(mod(prm.NCellID-1,3)+1,:);  % Transmit azimuthal sweep limits
 
-theta = prm.cellAngles(mod(cellID-1,3)+1); % Current cell normal angle
+theta = prm.cellAngles(mod(prm.NCellID-1,3)+1); % Current cell normal angle
 
 %% SYNCHRONIZATION SIGNAL BURST CONFIGURATION
 txBurst = nrWavegenSSBurstConfig;
