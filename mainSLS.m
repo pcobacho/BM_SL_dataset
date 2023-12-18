@@ -12,7 +12,7 @@
 % *************************************************************************
 
 clear; clc; close all;
-seed=399;
+seed=219;
 rng(seed);   % Set RNG state for repeatability
 tic;
 
@@ -64,7 +64,7 @@ totalIntPower = sum(intPower(:,2:end),2);
 totalIntPowerdB = 10*log10(totalIntPower);
 
 % Calculate SINR per user
-BWinHz = 52*12*30e3;
+BWinHz = 52*12*prm.SCS*1e3;
 F=3; % noise figure
 NdB = -173.8+10*log10(BWinHz)-30+F;
 

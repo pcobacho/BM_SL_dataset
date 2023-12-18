@@ -102,6 +102,13 @@ function hPlotSpatialMIMOScene(sceneParams,wT,wR)
         rxarraypos_plot(3,:),'bo','MarkerSize',2,'MarkerFaceColor','b');
     if isprop(rxArray,'Size')
         rxArraySize = rxArray.Size;
+    elseif isprop(rxArray,'ElementPosition')
+        if size(rxArray.ElementPosition,2)>1
+            numRows=sqrt(length(rxArray.ElementPosition));
+            rxArraySize = [numRows numRows];
+        else
+            rxArraySize = [1 1];
+        end    
     else
         rxArraySize = rxArray.NumElements;
     end

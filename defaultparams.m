@@ -20,7 +20,7 @@ prm.SSBlockPattern = 'Case C';      % Case A/B/C/D/E
 prm.SSBTransmitted = [ones(1,8) zeros(1,0)];   % 4/8 or 64 in length
 
 prm.TxArraySize = [8 8];            % Transmit array size, [rows cols]
-prm.TxAZranges = [[-60 60]; [60 180]; [-180 -60]];
+prm.TxAZranges = [[-45 45]; [75 165]; [-165 -75]];
 prm.TxELlim = [-60 -15];              % Transmit elevation sweep limits
 
 prm.RxArraySize = [2 2];            % Receive array size, [rows cols]
