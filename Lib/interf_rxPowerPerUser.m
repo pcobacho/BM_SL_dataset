@@ -65,16 +65,19 @@ arrayTx = phased.ConformalArray(...
 %     'Type', 'Directivity', 'PlotStyle', 'Overlay');
 
 % Receive array
-if prm.IsRxURA
-    % Uniform rectangular array
-    arrayRx = phased.URA(prm.RxArraySize,0.5*lambda, ...
-        'Element',phased.IsotropicAntennaElement);
-else
-    % Uniform linear array
-    arrayRx = phased.ULA(prm.NumRx, ...
-        'ElementSpacing',0.5*lambda, ...
-        'Element',phased.IsotropicAntennaElement);
-end
+% if prm.IsRxURA
+%     % Uniform rectangular array
+%     arrayRx = phased.URA(prm.RxArraySize,0.5*lambda, ...
+%         'Element',phased.IsotropicAntennaElement);
+% else
+%     % Uniform linear array
+%     arrayRx = phased.ULA(prm.NumRx, ...
+%         'ElementSpacing',0.5*lambda, ...
+%         'Element',phased.IsotropicAntennaElement);
+% end
+
+arrayRx = phased.ConformalArray('Element', ...
+    phased.IsotropicAntennaElement('BackBaffled', false));
 
 % Scatterer locations
 if ~isempty(scatPos)
@@ -111,10 +114,16 @@ maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
 numTxBeams = sum(txBurst.TransmittedBlocks);
 
 % Transmit beam angles in azimuth and elevation, equi-spaced
-azBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Azimuth');
-elBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Elevation');
-txBeamAng = hGetBeamSweepAngles(numTxBeams,prm.TxAZlim,prm.TxELlim, ...
-    azBW,elBW,prm.ElevationSweep);
+% azBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Azimuth');
+% elBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Elevation');
+% txBeamAng = hGetBeamSweepAngles(numTxBeams,prm.TxAZlim,prm.TxELlim, ...
+%     azBW,elBW,prm.ElevationSweep);
+
+if prm.numTxBeams>1
+    txBeamAng = [linspace(prm.TxAZlim(1),prm.TxAZlim(2),prm.numTxBeams); zeros(1,prm.numTxBeams)];
+else
+    txBeamAng = [0;0];
+end
 
 % For evaluating transmit-side steering weights
 SteerVecTx = phased.SteeringVector('SensorArray',arrayTx, ...
