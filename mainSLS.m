@@ -27,7 +27,7 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 2;
+prm.num_users = 90;
 prm.fillCell = false;
 
 prm.numScat = 0;
@@ -40,10 +40,11 @@ prm.ElevationSweep = false;
 prm.FreqRange = 'FR2';
 prm.CenterFreq = 32e9;
 prm.SSBlockPattern = 'Case D';
-prm.SSBTransmitted = [ones(1,9) zeros(1,55)];
+numTxBeams = 1;
+prm.SSBTransmitted = [ones(1,numTxBeams) zeros(1,64-numTxBeams)];
 
-prm.showFigures = false;
-prm.saveResults = false;
+prm.showFigures = true;
+prm.saveResults = true;
 
 % Parameters validation
 prm = validateParams(prm);
@@ -56,12 +57,12 @@ prm = validateParams(prm);
 rxPowerdB = rxPowerdBm - 30;
 
 % Calculates interfering RSRP
-intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
-% intPowerdBm = intPowerdBm(:,2:end);
-intPowerdB = intPowerdBm-30;
-intPower = 10.^(intPowerdB./10);
-totalIntPower = sum(intPower(:,2:end),2);
-totalIntPowerdB = 10*log10(totalIntPower);
+% intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
+% % intPowerdBm = intPowerdBm(:,2:end);
+% intPowerdB = intPowerdBm-30;
+% intPower = 10.^(intPowerdB./10);
+% totalIntPower = sum(intPower(:,2:end),2);
+% totalIntPowerdB = 10*log10(totalIntPower);
 
 % Calculate SINR per user
 BWinHz = 52*12*prm.SCS*1e3;
@@ -71,7 +72,14 @@ NdB = -173.8+10*log10(BWinHz)-30+F;
 rxPower =  10.^(rxPowerdB./10);
 N = 10^(NdB/10);
 
-sinrdB = 10*log10(rxPower./(totalIntPower+N));
+% sinrdB = 10*log10(rxPower./(totalIntPower+N));
+sinrdB = 10*log10(rxPower./N);
+
+%% BORRAR
+rsrp = squeeze(RSRP);
+angle = linspace(-90,90,90);
+figure, polarplot(deg2rad(angle),rsrp.','.-')
+%%
 
 if prm.showFigures
     % SINR histogram (pdf)
