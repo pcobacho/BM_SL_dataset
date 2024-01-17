@@ -18,9 +18,6 @@ for i=1:prm.num_users
     userPos(2,i) = gNBpos(2,prm.refCellID) + r * sind(theta(i));
 end
 
-userPos(1,1) = gNBpos(1,prm.refCellID) + r * cosd(10);
-userPos(2,1) = gNBpos(2,prm.refCellID) + r * sind(10);
-
 % Get scatters position
 scatPos = get_scatters_positions(prm.numScat,prm.scen_center, ...
     prm.interSiteDist);

@@ -16,10 +16,6 @@ seed=219;
 rng(seed);   % Set RNG state for repeatability
 tic;
 
-% Configure number of workers (parfor)
-% numWorkers=10;
-% parpool('local',numWorkers);
-
 % Add search path with the project files
 [~, oldPath] = addPaths();
 
@@ -27,7 +23,7 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 90;
+prm.num_users = 13;
 prm.fillCell = false;
 
 prm.numScat = 0;
@@ -55,14 +51,6 @@ prm = validateParams(prm);
 % Obtains the optimal beam pair RSRP each user of the reference cell
 [rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
 rxPowerdB = rxPowerdBm - 30;
-
-% Calculates interfering RSRP
-% intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
-% % intPowerdBm = intPowerdBm(:,2:end);
-% intPowerdB = intPowerdBm-30;
-% intPower = 10.^(intPowerdB./10);
-% totalIntPower = sum(intPower(:,2:end),2);
-% totalIntPowerdB = 10*log10(totalIntPower);
 
 % Calculate SINR per user
 BWinHz = 52*12*prm.SCS*1e3;
@@ -101,8 +89,5 @@ end
 % Restore search paths
 % *************************************************************************
 path(oldPath);
-
-% Close parallel group
-% delete(gcp('nocreate'));
 
 toc;

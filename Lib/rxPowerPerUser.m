@@ -22,11 +22,7 @@ cfgDL = configureWaveformGenerator(prm,txBurst);
 burstWaveform = nrWaveformGenerator(cfgDL);
 
 % Display spectrogram of SS burst waveform
-% figure;
 ofdmInfo = nrOFDMInfo(cfgDL.SCSCarriers{1}.NSizeGrid,prm.SCS);
-% nfft = ofdmInfo.Nfft;
-% spectrogram(burstWaveform,ones(nfft,1),0,nfft,'centered',ofdmInfo.SampleRate,'yaxis','MinThreshold',-130);
-% title('Spectrogram of SS burst waveform')
 
 
 %% CHANNEL CONFIGURATION
@@ -51,25 +47,6 @@ arrayTx = phased.ConformalArray(...
     'ElementNormal',[theta;0], ...
     'Taper',taper);
 
-% figure, viewArray(arrayTx);
-% 
-% figure();
-% pattern(arrayTx, prm.CenterFreq, -180:180, 0, 'PropagationSpeed', c,...
-%     'CoordinateSystem', 'polar', ...
-%     'Type', 'Directivity', 'PlotStyle', 'Overlay');
-
-% Receive array
-% if prm.IsRxURA
-%     % Uniform rectangular array
-%     arrayRx = phased.URA(prm.RxArraySize,0.5*lambda, ...
-%         'Element',phased.IsotropicAntennaElement);
-% else
-%     % Uniform linear array
-%     arrayRx = phased.ULA(prm.NumRx, ...
-%         'ElementSpacing',0.5*lambda, ...
-%         'Element',phased.IsotropicAntennaElement);
-% end
-% arrayRx = phased.IsotropicAntennaElement;
 arrayRx = phased.ConformalArray('Element', ...
     phased.IsotropicAntennaElement('BackBaffled', false));
 
@@ -111,14 +88,10 @@ maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
 % txBeamAng = hGetBeamSweepAngles(prm.numTxBeams,TxAZlim,prm.TxELlim, ...
 %     azBW,elBW,prm.ElevationSweep);
 
-% AzAngles = linspace(TxAZlim(1),TxAZlim(2),prm.numTxBeams/2);
-% ElAngles = [-20.56*ones(1,4) -14.04*ones(1,4)];
-% txBeamAng = [repmat(AzAngles,1,2);ElAngles];
-
 if prm.numTxBeams>1
     txBeamAng = [linspace(TxAZlim(1),TxAZlim(2),prm.numTxBeams); zeros(1,prm.numTxBeams)];
 else
-    txBeamAng = [0;0];
+    txBeamAng = [45;0];
 end
 
 % For evaluating transmit-side steering weights
@@ -260,27 +233,7 @@ optRSRP = rsrp(rxBeamID,txBeamID);
 %     num2str(rxBeamAng(2,rxBeamID)) ')' ]);
 
 % % Display final beam pair patterns
-% h = figure('Position',figposition([32 55 32 40]));
-% h.Name = 'Selected Transmit Array Response Pattern';
-% wT_opt = SteerVecTx(prm.CenterFreq,txBeamAng(:,txBeamID));
-% pattern(arrayTx,prm.CenterFreq,'PropagationSpeed',c,'Weights',wT_opt);
-% 
-% h = figure('Position',figposition([32 55 32 40]));
-% h.Name = 'Selected Receive Array Response Pattern';
-% wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rxBeamID));
-% pattern(arrayRx,prm.CenterFreq,'PropagationSpeed',c,'Weights',wR);
-% 
-% h = figure();
-% subplot(1,2,1)
-% pattern(arrayTx, prm.CenterFreq, -180:180, 0, 'PropagationSpeed', c,...
-% 'CoordinateSystem', 'polar', 'Type', 'Directivity', 'PlotStyle', 'Overlay',...
-% 'Weights',wT(:,txBeamID))
-% 
-% subplot(1,2,2)
-% pattern(arrayRx, prm.CenterFreq, -180:180, 0, 'PropagationSpeed', c,...
-% 'CoordinateSystem', 'polar', 'Type', 'Directivity', 'PlotStyle', 'Overlay',...
-% 'Weights',wR)
-% 
+ 
 % % Plot MIMO scenario with tx, rx, scatterers, and determined beams. Beam
 % % patterns in this figure resemble the power patterns in linear scale.
 % prmScene = struct();
@@ -300,9 +253,7 @@ optRSRP = rsrp(rxBeamID,txBeamID);
 %     view(2);
 % end
 % 
-% % Plot the scattering MIMO scenario (including transmit and receive antenna
-% % arrays, scatterer positions and their paths, and all the transmit and 
-% % receive antenna array beam patterns) 
+% % All tx & rx beams in the scenario 
 % hPlotSpatialMIMOScene(prmScene,wT,wR);
 % axis tight;
 % view([74 29]);
