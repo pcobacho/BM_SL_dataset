@@ -17,12 +17,15 @@ txBurst.SubcarrierSpacingCommon = prm.SubcarrierSpacingCommon;
 % by nrWaveformGenerator to generate the SS burst waveform.
 cfgDL = configureWaveformGenerator(prm,txBurst);
 
-
 %% BURST GENERATION
 burstWaveform = nrWaveformGenerator(cfgDL);
 
 % Display spectrogram of SS burst waveform
+% figure;
 ofdmInfo = nrOFDMInfo(cfgDL.SCSCarriers{1}.NSizeGrid,prm.SCS);
+nfft = ofdmInfo.Nfft;
+% spectrogram(burstWaveform,ones(nfft,1),0,nfft,'centered',ofdmInfo.SampleRate,'yaxis','MinThreshold',-130);
+% title('Spectrogram of SS burst waveform')
 
 
 %% CHANNEL CONFIGURATION
@@ -55,29 +58,33 @@ if ~isempty(scatPos)
     prm.ScatPos = scatPos;
 end
 
+% % Configure channel
+% channel = phased.ScatteringMIMOChannel;
+% channel.PropagationSpeed = c;
+% channel.CarrierFrequency = prm.CenterFreq;
+% channel.SampleRate = ofdmInfo.SampleRate;
+% channel.SimulateDirectPath = true;
+% channel.ChannelResponseOutputPort = true;
+% channel.Polarization = 'None';
+% channel.TransmitArray = arrayTx;
+% channel.TransmitArrayPosition = gNBpos;
+% channel.ReceiveArray = arrayRx;
+% channel.ReceiveArrayPosition = userPos;
+% channel.ScattererSpecificationSource = 'Auto';
+% channel.NumScatterers = prm.numScat;
+% if isfield(prm,'ScatPos')
+%     channel.ScattererPosition = prm.ScatPos;
+%     channel.ScattererCoefficient = ones(1,size(prm.ScatPos,2));
+% end
+% 
+% % Get maximum channel delay
+% [~,~,tau] = channel(complex(randn(ofdmInfo.SampleRate*1e-3,prm.NumTx), ...
+%     randn(ofdmInfo.SampleRate*1e-3,prm.NumTx)));
+% maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
 
-% Configure channel
-channel = phased.ScatteringMIMOChannel;
-channel.PropagationSpeed = c;
-channel.CarrierFrequency = prm.CenterFreq;
-channel.SampleRate = ofdmInfo.SampleRate;
-channel.SimulateDirectPath = true;
-channel.ChannelResponseOutputPort = true;
-channel.Polarization = 'None';
-channel.TransmitArray = arrayTx;
-channel.TransmitArrayPosition = gNBpos;
-channel.ReceiveArray = arrayRx;
-channel.ReceiveArrayPosition = userPos;
-channel.ScattererSpecificationSource = 'Property';
-if isfield(prm,'ScatPos')
-    channel.ScattererPosition = prm.ScatPos;
-    channel.ScattererCoefficient = ones(1,size(prm.ScatPos,2));
-end
-
-% Get maximum channel delay
-[~,~,tau] = channel(complex(randn(ofdmInfo.SampleRate*1e-3,prm.NumTx), ...
-    randn(ofdmInfo.SampleRate*1e-3,prm.NumTx)));
-maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
+channel = phased.FreeSpace('SampleRate',ofdmInfo.SampleRate, ...
+    'PropagationSpeed',c,'OperatingFrequency',prm.CenterFreq);
+maxChDelay = 0;
 
 
 %% TRANSMIT-END BEAM SWEEPING
@@ -90,6 +97,8 @@ maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
 
 if prm.numTxBeams>1
     txBeamAng = [linspace(TxAZlim(1),TxAZlim(2),prm.numTxBeams); zeros(1,prm.numTxBeams)];
+    % rand_idx = randperm(prm.numTxBeams);
+    % txBeamAng = txBeamAng(:,rand_idx);
 else
     txBeamAng = [45;0];
 end
@@ -106,11 +115,11 @@ burstOccupiedSymbols = burstStartSymbols.' + (1:4);
 
 % Apply steering per OFDM symbol for each SSB
 gridSymLengths = repmat(ofdmInfo.SymbolLengths,1,cfgDL.NumSubframes);
-%   repeat burst over numTx to prepare for steering
+% repeat burst over numTx to prepare for steering
 strTxWaveform = repmat(burstWaveform,1,prm.NumTx)./sqrt(prm.NumTx);
 wT = zeros(prm.NumTx,prm.numTxBeams);
-for ssb = 1:prm.numTxBeams
 
+for ssb = 1:prm.numTxBeams
     % Extract SSB waveform from burst
     blockSymbols = burstOccupiedSymbols(ssb,:);
     startSSBInd = sum(gridSymLengths(1:blockSymbols(1)-1))+1;
@@ -122,9 +131,10 @@ for ssb = 1:prm.numTxBeams
 
     % Apply weights per transmit element to SSB
     strTxWaveform(startSSBInd:endSSBInd,:) = ssbWaveform.*(wT(:,ssb)');
-
 end
 
+reset(SteerVecTx)
+release(SteerVecTx)
 
 %% RECEIVE-END BEAM SWEEPING AND MEASUREMENT
 
@@ -133,8 +143,6 @@ azBW = beamwidth(arrayRx,prm.CenterFreq,'Cut','Azimuth');
 elBW = beamwidth(arrayRx,prm.CenterFreq,'Cut','Elevation');
 rxBeamAng = hGetBeamSweepAngles(prm.numRxBeams,prm.RxAZlim,prm.RxELlim, ...
     azBW,elBW,prm.ElevationSweep);
-
-% rxBeamAng = [0 180; 0 0];
 
 % For evaluating receive-side steering weights
 SteerVecRx = phased.SteeringVector('SensorArray',arrayRx, ...
@@ -153,6 +161,7 @@ rxGain = 10^(prm.rxGain_dB/20);
 carrier = nrCarrierConfig('NCellID',prm.NCellID);
 carrier.NSizeGrid = cfgDL.SCSCarriers{1}.NSizeGrid;
 carrier.SubcarrierSpacing = prm.SCS;
+
 pssRef = nrPSS(carrier.NCellID);
 pssInd = nrPSSIndices;
 ibar_SSB = 0;
@@ -169,10 +178,11 @@ refGrid(burstOccupiedSubcarriers, ...
 % Loop over all receive beams
 rsrp = zeros(prm.numRxBeams,prm.numTxBeams);
 for rIdx = 1:prm.numRxBeams
-
     % Fading channel, with path loss
     txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
-    fadWave = channel(txWave);
+    % fadWave = channel(txWave);
+    fadWave = channel(txWave,Cr.',userPos,zeros(3,64),[0;0;0]);
+    fadWave = sum(fadWave,2);
 
     % Receive gain, to compensate for the path loss
     fadWaveG = fadWave*rxGain;
@@ -183,7 +193,7 @@ for rIdx = 1:prm.numRxBeams
 
     % Generate weights for steered direction
     wR = SteerVecRx(prm.CenterFreq,rxBeamAng(:,rIdx));
-
+    
     % Apply weights per receive element
     if strcmp(prm.FreqRange, 'FR1')
         strRxWaveform = rxWaveform.*(wR');
@@ -199,8 +209,23 @@ for rIdx = 1:prm.numRxBeams
     end
     strRxWaveformS = strRxWaveform(1+offset:end,:);
 
+    % figure, spectrogram(strRxWaveformS,ones(nfft,1),0,nfft,'centered',ofdmInfo.SampleRate,'yaxis','MinThreshold',-130);
+    % title('Spectrogram of Rx SS burst waveform')
+
     % OFDM Demodulate
     rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
+
+    % % Plot 3-D grid
+    % numOFDMsymb = cfgDL.NumSubframes*ofdmInfo.SlotsPerSubframe*ofdmInfo.SymbolsPerSlot;
+    % numSubcarrier = carrier.NSizeGrid*12;
+    % 
+    % freqRange = ((1:numSubcarrier)-1)*prm.SubcarrierSpacingCommon;
+    % % [X,Y] = meshgrid(1:numOFDMsymb,(1:numSubcarrier));
+    % [X,Y] = meshgrid(1:numOFDMsymb,freqRange/1e3);
+    % s = surf(X,Y,log10(abs(rxGrid)));
+    % s.FaceAlpha=0.6;
+    % s.EdgeColor = 'none';
+    % xlabel('OFDM symbol idx'),zlabel('log10(|rxGrid|)'),ylabel('freq (kHz)')
 
     % Loop over all SSBs in rxGrid (transmit end)
     for tIdx = 1:prm.numTxBeams
@@ -217,7 +242,6 @@ for rIdx = 1:prm.numRxBeams
     end
 end
 
-
 %% BEAM DETERMINATION
 [~,i] = max(rsrp,[],'all','linear');    % First occurrence is output
 % i is column-down first (for receive), then across columns (for transmit)
@@ -225,15 +249,7 @@ end
 optRSRP = rsrp(rxBeamID,txBeamID);
 
 % Display the selected beam pair
-% disp(['Selected Beam pair with RSRP: ' num2str(optRSRP), ...
-%     ' dBm', 13 '  Transmit #' num2str(txBeamID) ...
-%     ' (Azimuth: ' num2str(txBeamAng(1,txBeamID)) ', Elevation: ' ...
-%     num2str(txBeamAng(2,txBeamID)) ')' 13 '  Receive #' num2str(rxBeamID) ...
-%     ' (Azimuth: ' num2str(rxBeamAng(1,rxBeamID)) ', Elevation: ' ...
-%     num2str(rxBeamAng(2,rxBeamID)) ')' ]);
-
-% % Display final beam pair patterns
- 
+% 
 % % Plot MIMO scenario with tx, rx, scatterers, and determined beams. Beam
 % % patterns in this figure resemble the power patterns in linear scale.
 % prmScene = struct();
@@ -248,12 +264,12 @@ optRSRP = rsrp(rxBeamID,txBeamID);
 % prmScene.ArrayScaling = 1;     % To enlarge antenna arrays in the plot
 % prmScene.MaxTxBeamLength = 32; % Maximum length of transmit beams in the plot
 % prmScene.MaxRxBeamLength = 10; % Maximum length of receive beam in the plot
+%
 % hPlotSpatialMIMOScene(prmScene,wT(:,txBeamID),wR);
 % if ~prm.ElevationSweep
 %     view(2);
 % end
-% 
-% % All tx & rx beams in the scenario 
+%
 % hPlotSpatialMIMOScene(prmScene,wT,wR);
 % axis tight;
 % view([74 29]);

@@ -23,23 +23,23 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 13;
+prm.num_users = 50;
 prm.fillCell = false;
 
 prm.numScat = 0;
 prm.interSiteDist = 200;
 
-prm.hUE = 0;              % UEs height
+prm.hUE = 0; % UEs height
 prm.h_gNB = 0;
 prm.ElevationSweep = false;
 
 prm.FreqRange = 'FR2';
 prm.CenterFreq = 32e9;
 prm.SSBlockPattern = 'Case D';
-numTxBeams = 1;
+numTxBeams = 9;
 prm.SSBTransmitted = [ones(1,numTxBeams) zeros(1,64-numTxBeams)];
 
-prm.showFigures = true;
+prm.showFigures = false;
 prm.saveResults = true;
 
 % Parameters validation
@@ -63,22 +63,16 @@ N = 10^(NdB/10);
 % sinrdB = 10*log10(rxPower./(totalIntPower+N));
 sinrdB = 10*log10(rxPower./N);
 
-%% BORRAR
-rsrp = squeeze(RSRP);
-angle = linspace(-90,90,90);
-figure, polarplot(deg2rad(angle),rsrp.','.-')
-%%
-
 if prm.showFigures
     % SINR histogram (pdf)
     figure, histogram(sinrdB,'Normalization','pdf')
     xlabel('SINR (dB)'), title('SINR PDF')
 
     % SINR map
-    if prm.num_users>1
-        showUserSINRmap(sinrdB,userPos,prm.num_users)
-    end
-end
+    % if prm.num_users>1
+    %     showUserSINRmap(sinrdB,userPos,prm.num_users)
+    % end
+end  
 
 if prm.saveResults    
     % Save results

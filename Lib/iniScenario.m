@@ -11,13 +11,6 @@ cellCenters = getCellCenter(gNBpos,prm.interSiteDist);
     cellCenters(:,mod(prm.refCellID-1,3)+1,ceil(prm.refCellID/3)), ...
     prm.interSiteDist,prm.hUE);
 
-r = 50;
-theta =  linspace(-90,90,prm.num_users);
-for i=1:prm.num_users
-    userPos(1,i) = gNBpos(1,prm.refCellID) + r * cosd(theta(i));
-    userPos(2,i) = gNBpos(2,prm.refCellID) + r * sind(theta(i));
-end
-
 % Get scatters position
 scatPos = get_scatters_positions(prm.numScat,prm.scen_center, ...
     prm.interSiteDist);
