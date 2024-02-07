@@ -181,8 +181,12 @@ for rIdx = 1:prm.numRxBeams
     % Fading channel, with path loss
     txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
     % fadWave = channel(txWave);
-    fadWave = channel(txWave,Cr.',userPos,zeros(3,64),[0;0;0]);
+
+    fadWave = channel(txWave,Cr.',userPos,zeros(3,prod(prm.TxArraySize)),[0;0;0]);
     fadWave = sum(fadWave,2);
+
+    % txWave = sum(txWave,2);
+    % fadWave = channel(txWave,gNBpos,userPos,[0;0;0],[0;0;0]);    
 
     % Receive gain, to compensate for the path loss
     fadWaveG = fadWave*rxGain;
