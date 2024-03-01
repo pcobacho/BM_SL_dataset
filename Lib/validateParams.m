@@ -87,6 +87,6 @@ function prm = validateParams(prm)
     prm.numRxBeams = 1; % Num of beams at transmit end
 
     prm.num_cells = prm.num_gNB*3; % number of cells (sectors)
-    prm.SSBTransmitted = [ones(1,pmr.numTxBeams) zeros(1,64-prm.numTxBeams)]; % 4/8 or 64 in length
+    prm.SSBTransmitted = [ones(1,prm.numTxBeams) zeros(1,64-prm.numTxBeams)]; % 4/8 or 64 in length
 
 end

@@ -24,7 +24,6 @@ prm = defaultparams();
 
 % Customize parameters
 
-
 % Parameters validation
 prm = validateParams(prm);
 

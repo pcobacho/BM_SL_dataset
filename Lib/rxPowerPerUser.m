@@ -24,9 +24,6 @@ burstWaveform = nrWaveformGenerator(cfgDL);
 % figure;
 ofdmInfo = nrOFDMInfo(cfgDL.SCSCarriers{1}.NSizeGrid,prm.SCS);
 nfft = ofdmInfo.Nfft;
-% spectrogram(burstWaveform,ones(nfft,1),0,nfft,'centered',ofdmInfo.SampleRate,'yaxis','MinThreshold',-130);
-% title('Spectrogram of SS burst waveform')
-
 
 %% CHANNEL CONFIGURATION
 c = physconst('LightSpeed');   % Propagation speed
@@ -90,7 +87,6 @@ switch prm.chType
     otherwise
         error('prm.chType is invalid. Must be ''scat'' or ''freeSp''.')
 end
-
 
 
 %% TRANSMIT-END BEAM SWEEPING
@@ -165,7 +161,6 @@ rxGain = 10^(prm.rxGain_dB/20);
 carrier = nrCarrierConfig('NCellID',prm.NCellID);
 carrier.NSizeGrid = cfgDL.SCSCarriers{1}.NSizeGrid;
 carrier.SubcarrierSpacing = prm.SCS;
-
 pssRef = nrPSS(carrier.NCellID);
 pssInd = nrPSSIndices;
 ibar_SSB = 0;
@@ -182,7 +177,6 @@ refGrid(burstOccupiedSubcarriers, ...
 % Loop over all receive beams
 rsrp = zeros(prm.numRxBeams,prm.numTxBeams);
 for rIdx = 1:prm.numRxBeams
-    % Fading channel, with path loss
     txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
 
     switch prm.chType
