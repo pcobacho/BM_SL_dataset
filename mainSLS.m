@@ -35,16 +35,22 @@ prm = validateParams(prm);
 [rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
 rxPowerdB = rxPowerdBm - 30;
 
+% Calculates interfering RSRP
+intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
+intPowerdB = intPowerdBm-30;
+intPower = 10.^(intPowerdB./10);
+totalIntPower = sum(intPower(:,2:end),2);
+totalIntPowerdB = 10*log10(totalIntPower);
+
 % Calculate SINR per user
 BWinHz = 52*12*prm.SCS*1e3;
-F=3; % noise figure
+F=3; % noise figure (dB)
 NdB = -173.8+10*log10(BWinHz)-30+F;
 
 rxPower =  10.^(rxPowerdB./10);
 N = 10^(NdB/10);
 
-% sinrdB = 10*log10(rxPower./(totalIntPower+N));
-sinrdB = 10*log10(rxPower./N);
+sinrdB = 10*log10(rxPower./(totalIntPower+N));
 
 if prm.showFigures
     % SINR histogram (pdf)
@@ -52,10 +58,10 @@ if prm.showFigures
     xlabel('SINR (dB)'), title('SINR PDF')
 
     % SINR map
-    % if prm.num_users>1
-    %     showUserSINRmap(sinrdB,userPos,prm.num_users)
-    % end
-end  
+    if prm.num_users>1
+        showUserSINRmap(sinrdB,userPos,prm.num_users)
+    end
+end 
 
 if prm.saveResults    
     % Save results
