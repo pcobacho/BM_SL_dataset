@@ -16,10 +16,6 @@ seed=219;
 rng(seed);   % Set RNG state for repeatability
 tic;
 
-% Configure number of workers (parfor)
-% numWorkers=10;
-% parpool('local',numWorkers);
-
 % Add search path with the project files
 [~, oldPath] = addPaths();
 
@@ -27,23 +23,7 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 2;
-prm.fillCell = false;
 
-prm.numScat = 0;
-prm.interSiteDist = 200;
-
-prm.hUE = 0;              % UEs height
-prm.h_gNB = 0;
-prm.ElevationSweep = false;
-
-prm.FreqRange = 'FR2';
-prm.CenterFreq = 32e9;
-prm.SSBlockPattern = 'Case D';
-prm.SSBTransmitted = [ones(1,9) zeros(1,55)];
-
-prm.showFigures = false;
-prm.saveResults = false;
 
 % Parameters validation
 prm = validateParams(prm);
@@ -55,14 +35,6 @@ prm = validateParams(prm);
 [rxPowerdBm,RSRP,txBeamID,rxBeamID] = serving_gNB_rx_power(prm,gNBpos,userPos,scatPos);
 rxPowerdB = rxPowerdBm - 30;
 
-% Calculates interfering RSRP
-intPowerdBm = interf_gNBs_rx_power(prm,gNBpos,userPos,scatPos,rxBeamID);
-% intPowerdBm = intPowerdBm(:,2:end);
-intPowerdB = intPowerdBm-30;
-intPower = 10.^(intPowerdB./10);
-totalIntPower = sum(intPower(:,2:end),2);
-totalIntPowerdB = 10*log10(totalIntPower);
-
 % Calculate SINR per user
 BWinHz = 52*12*prm.SCS*1e3;
 F=3; % noise figure
@@ -71,7 +43,8 @@ NdB = -173.8+10*log10(BWinHz)-30+F;
 rxPower =  10.^(rxPowerdB./10);
 N = 10^(NdB/10);
 
-sinrdB = 10*log10(rxPower./(totalIntPower+N));
+% sinrdB = 10*log10(rxPower./(totalIntPower+N));
+sinrdB = 10*log10(rxPower./N);
 
 if prm.showFigures
     % SINR histogram (pdf)
@@ -79,10 +52,10 @@ if prm.showFigures
     xlabel('SINR (dB)'), title('SINR PDF')
 
     % SINR map
-    if prm.num_users>1
-        showUserSINRmap(sinrdB,userPos,prm.num_users)
-    end
-end
+    % if prm.num_users>1
+    %     showUserSINRmap(sinrdB,userPos,prm.num_users)
+    % end
+end  
 
 if prm.saveResults    
     % Save results
@@ -93,8 +66,5 @@ end
 % Restore search paths
 % *************************************************************************
 path(oldPath);
-
-% Close parallel group
-% delete(gcp('nocreate'));
 
 toc;
