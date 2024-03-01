@@ -58,49 +58,53 @@ if ~isempty(scatPos)
     prm.ScatPos = scatPos;
 end
 
-% % Configure channel
-% channel = phased.ScatteringMIMOChannel;
-% channel.PropagationSpeed = c;
-% channel.CarrierFrequency = prm.CenterFreq;
-% channel.SampleRate = ofdmInfo.SampleRate;
-% channel.SimulateDirectPath = true;
-% channel.ChannelResponseOutputPort = true;
-% channel.Polarization = 'None';
-% channel.TransmitArray = arrayTx;
-% channel.TransmitArrayPosition = gNBpos;
-% channel.ReceiveArray = arrayRx;
-% channel.ReceiveArrayPosition = userPos;
-% channel.ScattererSpecificationSource = 'Auto';
-% channel.NumScatterers = prm.numScat;
-% if isfield(prm,'ScatPos')
-%     channel.ScattererPosition = prm.ScatPos;
-%     channel.ScattererCoefficient = ones(1,size(prm.ScatPos,2));
-% end
-% 
-% % Get maximum channel delay
-% [~,~,tau] = channel(complex(randn(ofdmInfo.SampleRate*1e-3,prm.NumTx), ...
-%     randn(ofdmInfo.SampleRate*1e-3,prm.NumTx)));
-% maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
+% Configure channel
+switch prm.chType
+    case 'scat'
+        channel = phased.ScatteringMIMOChannel;
+        channel.PropagationSpeed = c;
+        channel.CarrierFrequency = prm.CenterFreq;
+        channel.SampleRate = ofdmInfo.SampleRate;
+        channel.SimulateDirectPath = true;
+        channel.ChannelResponseOutputPort = true;
+        channel.Polarization = 'None';
+        channel.TransmitArray = arrayTx;
+        channel.TransmitArrayPosition = gNBpos;
+        channel.ReceiveArray = arrayRx;
+        channel.ReceiveArrayPosition = userPos;
+        channel.ScattererSpecificationSource = 'Auto';
+        channel.NumScatterers = prm.numScat;
+        if isfield(prm,'ScatPos')
+            channel.ScattererPosition = prm.ScatPos;
+            channel.ScattererCoefficient = ones(1,size(prm.ScatPos,2));
+        end
+        
+        % Get maximum channel delay
+        [~,~,tau] = channel(complex(randn(ofdmInfo.SampleRate*1e-3,prm.NumTx), ...
+            randn(ofdmInfo.SampleRate*1e-3,prm.NumTx)));
+        maxChDelay = ceil(max(tau)*ofdmInfo.SampleRate);
+    case 'freeSp'
+        channel = phased.FreeSpace('SampleRate',ofdmInfo.SampleRate, ...
+            'PropagationSpeed',c,'OperatingFrequency',prm.CenterFreq);
+        maxChDelay = 0;
+    otherwise
+        error('prm.chType is invalid. Must be ''scat'' or ''freeSp''.')
+end
 
-channel = phased.FreeSpace('SampleRate',ofdmInfo.SampleRate, ...
-    'PropagationSpeed',c,'OperatingFrequency',prm.CenterFreq);
-maxChDelay = 0;
 
 
 %% TRANSMIT-END BEAM SWEEPING
 
-% Transmit beam angles in azimuth and elevation, equi-spaced
-% azBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Azimuth');
-% elBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Elevation');
-% txBeamAng = hGetBeamSweepAngles(prm.numTxBeams,TxAZlim,prm.TxELlim, ...
-%     azBW,elBW,prm.ElevationSweep);
-
 if prm.numTxBeams>1
+    % Transmit beam angles in azimuth and elevation, equi-spaced
+    % azBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Azimuth');
+    % elBW = beamwidth(arrayTx,prm.CenterFreq,'Cut','Elevation');
+    % txBeamAng = hGetBeamSweepAngles(prm.numTxBeams,TxAZlim,prm.TxELlim, ...
+    %     azBW,elBW,prm.ElevationSweep);
+
     txBeamAng = [linspace(TxAZlim(1),TxAZlim(2),prm.numTxBeams); zeros(1,prm.numTxBeams)];
-    % rand_idx = randperm(prm.numTxBeams);
-    % txBeamAng = txBeamAng(:,rand_idx);
 else
-    txBeamAng = [45;0];
+    txBeamAng = [0;0];
 end
 
 % For evaluating transmit-side steering weights
@@ -180,13 +184,14 @@ rsrp = zeros(prm.numRxBeams,prm.numTxBeams);
 for rIdx = 1:prm.numRxBeams
     % Fading channel, with path loss
     txWave = [strTxWaveform; zeros(maxChDelay,size(strTxWaveform,2))];
-    % fadWave = channel(txWave);
 
-    fadWave = channel(txWave,Cr.',userPos,zeros(3,prod(prm.TxArraySize)),[0;0;0]);
-    fadWave = sum(fadWave,2);
-
-    % txWave = sum(txWave,2);
-    % fadWave = channel(txWave,gNBpos,userPos,[0;0;0],[0;0;0]);    
+    switch prm.chType
+        case 'scat'
+            fadWave = channel(txWave);
+        case 'freeSp'
+            fadWave = channel(txWave,Cr.',userPos,zeros(3,prod(prm.TxArraySize)),[0;0;0]);
+            fadWave = sum(fadWave,2);
+    end
 
     % Receive gain, to compensate for the path loss
     fadWaveG = fadWave*rxGain;
@@ -213,23 +218,8 @@ for rIdx = 1:prm.numRxBeams
     end
     strRxWaveformS = strRxWaveform(1+offset:end,:);
 
-    % figure, spectrogram(strRxWaveformS,ones(nfft,1),0,nfft,'centered',ofdmInfo.SampleRate,'yaxis','MinThreshold',-130);
-    % title('Spectrogram of Rx SS burst waveform')
-
     % OFDM Demodulate
     rxGrid = nrOFDMDemodulate(carrier,strRxWaveformS);
-
-    % % Plot 3-D grid
-    % numOFDMsymb = cfgDL.NumSubframes*ofdmInfo.SlotsPerSubframe*ofdmInfo.SymbolsPerSlot;
-    % numSubcarrier = carrier.NSizeGrid*12;
-    % 
-    % freqRange = ((1:numSubcarrier)-1)*prm.SubcarrierSpacingCommon;
-    % % [X,Y] = meshgrid(1:numOFDMsymb,(1:numSubcarrier));
-    % [X,Y] = meshgrid(1:numOFDMsymb,freqRange/1e3);
-    % s = surf(X,Y,log10(abs(rxGrid)));
-    % s.FaceAlpha=0.6;
-    % s.EdgeColor = 'none';
-    % xlabel('OFDM symbol idx'),zlabel('log10(|rxGrid|)'),ylabel('freq (kHz)')
 
     % Loop over all SSBs in rxGrid (transmit end)
     for tIdx = 1:prm.numTxBeams
@@ -251,29 +241,3 @@ end
 % i is column-down first (for receive), then across columns (for transmit)
 [rxBeamID,txBeamID] = ind2sub([prm.numRxBeams prm.numTxBeams],i(1));
 optRSRP = rsrp(rxBeamID,txBeamID);
-
-% Display the selected beam pair
-% 
-% % Plot MIMO scenario with tx, rx, scatterers, and determined beams. Beam
-% % patterns in this figure resemble the power patterns in linear scale.
-% prmScene = struct();
-% prmScene.TxArray = arrayTx;
-% prmScene.RxArray = arrayRx;
-% prmScene.TxArrayPos = gNBpos;
-% prmScene.RxArrayPos = userPos;
-% if isfield(prm,'ScatPos')
-%     prmScene.ScatterersPos = prm.ScatPos;
-% end
-% prmScene.Lambda = lambda;
-% prmScene.ArrayScaling = 1;     % To enlarge antenna arrays in the plot
-% prmScene.MaxTxBeamLength = 32; % Maximum length of transmit beams in the plot
-% prmScene.MaxRxBeamLength = 10; % Maximum length of receive beam in the plot
-%
-% hPlotSpatialMIMOScene(prmScene,wT(:,txBeamID),wR);
-% if ~prm.ElevationSweep
-%     view(2);
-% end
-%
-% hPlotSpatialMIMOScene(prmScene,wT,wR);
-% axis tight;
-% view([74 29]);

@@ -23,24 +23,7 @@ tic;
 prm = defaultparams();
 
 % Customize parameters
-prm.num_users = 50;
-prm.fillCell = false;
 
-prm.numScat = 0;
-prm.interSiteDist = 200;
-
-prm.hUE = 0; % UEs height
-prm.h_gNB = 0;
-prm.ElevationSweep = false;
-
-prm.FreqRange = 'FR2';
-prm.CenterFreq = 32e9;
-prm.SSBlockPattern = 'Case D';
-numTxBeams = 9;
-prm.SSBTransmitted = [ones(1,numTxBeams) zeros(1,64-numTxBeams)];
-
-prm.showFigures = false;
-prm.saveResults = true;
 
 % Parameters validation
 prm = validateParams(prm);
